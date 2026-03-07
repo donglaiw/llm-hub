@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>LLM Hub Dashboard</title>
+    <link rel="stylesheet" href="dashboard.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="hero">
+        <div>
+          <p class="eyebrow">Tiled workflow</p>
+          <h1>LLM Hub Dashboard</h1>
+          <p class="hero-copy">
+            Keep ChatGPT, Claude, and Gemini open as real tabs above this page.
+            Use the shared composer here to send to one provider or all three.
+          </p>
+        </div>
+
+        <div class="hero-actions">
+          <button id="detectButton" class="button ghost" type="button">
+            Refresh status
+          </button>
+          <div id="summaryBadge" class="summary-badge neutral">Idle</div>
+        </div>
+      </section>
+
+      <section class="targets-grid" aria-label="Provider status">
+        <article id="card-chatgpt" class="target-card neutral">
+          <div class="target-card-header">
+            <div>
+              <p class="target-kicker">Provider</p>
+              <h2>ChatGPT</h2>
+            </div>
+            <span id="badge-chatgpt" class="target-badge neutral">unknown</span>
+          </div>
+          <p id="meta-chatgpt" class="target-meta">No tab detected yet.</p>
+          <div class="target-card-actions">
+            <button class="button subtle send-button" type="button" data-target="chatgpt">
+              Send to ChatGPT
+            </button>
+            <a
+              id="open-chatgpt"
+              class="link-button"
+              href="https://chatgpt.com/"
+              target="_blank"
+              rel="noreferrer"
+            >
+              Open
+            </a>
+          </div>
+        </article>
+
+        <article id="card-claude" class="target-card neutral">
+          <div class="target-card-header">
+            <div>
+              <p class="target-kicker">Provider</p>
+              <h2>Claude</h2>
+            </div>
+            <span id="badge-claude" class="target-badge neutral">unknown</span>
+          </div>
+          <p id="meta-claude" class="target-meta">No tab detected yet.</p>
+          <div class="target-card-actions">
+            <button class="button subtle send-button" type="button" data-target="claude">
+              Send to Claude
+            </button>
+            <a
+              id="open-claude"
+              class="link-button"
+              href="https://claude.ai/"
+              target="_blank"
+              rel="noreferrer"
+            >
+              Open
+            </a>
+          </div>
+        </article>
+
+        <article id="card-gemini" class="target-card neutral">
+          <div class="target-card-header">
+            <div>
+              <p class="target-kicker">Provider</p>
+              <h2>Gemini</h2>
+            </div>
+            <span id="badge-gemini" class="target-badge neutral">unknown</span>
+          </div>
+          <p id="meta-gemini" class="target-meta">No tab detected yet.</p>
+          <div class="target-card-actions">
+            <button class="button subtle send-button" type="button" data-target="gemini">
+              Send to Gemini
+            </button>
+            <a
+              id="open-gemini"
+              class="link-button"
+              href="https://gemini.google.com/app"
+              target="_blank"
+              rel="noreferrer"
+            >
+              Open
+            </a>
+          </div>
+        </article>
+      </section>
+
+      <section class="composer-panel">
+        <div class="composer-header">
+          <div>
+            <p class="target-kicker">Shared composer</p>
+            <h2>Broadcast or route a prompt</h2>
+          </div>
+          <p id="summaryText" class="summary-text">
+            Arrange this dashboard below your provider tabs in a tiled browser layout.
+          </p>
+        </div>
+
+        <label class="composer-field" for="promptInput">
+          <span class="sr-only">Shared prompt</span>
+          <textarea
+            id="promptInput"
+            rows="8"
+            placeholder="Type a prompt to send into the current chat for one provider or all three..."
+          ></textarea>
+        </label>
+
+        <p id="validationMessage" class="validation hidden" role="alert"></p>
+
+        <div class="composer-actions">
+          <button id="sendAllButton" class="button primary" type="button">
+            Send to all
+          </button>
+          <button id="sendChatgptButton" class="button secondary send-button" type="button" data-target="chatgpt">
+            ChatGPT
+          </button>
+          <button id="sendClaudeButton" class="button secondary send-button" type="button" data-target="claude">
+            Claude
+          </button>
+          <button id="sendGeminiButton" class="button secondary send-button" type="button" data-target="gemini">
+            Gemini
+          </button>
+        </div>
+      </section>
+    </main>
+
+    <script src="dashboard.js"></script>
+  </body>
+</html>

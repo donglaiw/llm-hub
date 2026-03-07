@@ -1,0 +1,36 @@
+{
+  "manifest_version": 3,
+  "name": "LLM Hub Dashboard",
+  "description": "Open a dashboard tab that routes prompts into already-open ChatGPT, Claude, and Gemini tabs.",
+  "version": "0.1.0",
+  "permissions": ["tabs", "scripting"],
+  "host_permissions": [
+    "https://chatgpt.com/*",
+    "https://chat.openai.com/*",
+    "https://claude.ai/*",
+    "https://gemini.google.com/*"
+  ],
+  "action": {
+    "default_title": "Open LLM Hub Dashboard"
+  },
+  "background": {
+    "service_worker": "service_worker.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://chatgpt.com/*", "https://chat.openai.com/*"],
+      "js": ["shared/dom-utils.js", "content-chatgpt.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["https://claude.ai/*"],
+      "js": ["shared/dom-utils.js", "content-claude.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["https://gemini.google.com/*"],
+      "js": ["shared/dom-utils.js", "content-gemini.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}
