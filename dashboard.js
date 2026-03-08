@@ -8,55 +8,54 @@ const SITE_ORDER = ["chatgpt", "claude", "gemini"];
 
 const state = {
   busy: false,
-  detection: {}
+  detection: {},
+  selectedTargets: new Set(SITE_ORDER)
 };
 
 document.addEventListener("DOMContentLoaded", () => {
   const elements = collectElements();
 
-  elements.detectButton.addEventListener("click", () => {
-    detectTargets(elements, true);
-  });
-
-  elements.sendAllButton.addEventListener("click", () => {
-    sendToTargets(elements, SITE_ORDER);
-  });
+  for (const site of SITE_ORDER) {
+    elements.toggleButtons[site].addEventListener("click", () => {
+      toggleTarget(elements, site);
+    });
+  }
 
   elements.promptInput.addEventListener("input", () => {
     hideValidation(elements.validationMessage);
   });
 
   elements.promptInput.addEventListener("keydown", (event) => {
-    if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
+    if (event.isComposing) {
+      return;
+    }
+
+    if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault();
-      sendToTargets(elements, SITE_ORDER);
+      sendToSelectedTargets(elements);
     }
   });
 
-  for (const button of elements.sendButtons) {
-    button.addEventListener("click", () => {
-      sendToTargets(elements, [button.dataset.target]);
-    });
-  }
-
   renderIdle(elements);
-  detectTargets(elements, false);
+  renderTargetToggles(elements);
+  detectTargets(elements);
+
   window.setInterval(() => {
     if (!state.busy && !document.hidden) {
-      detectTargets(elements, false);
+      detectTargets(elements);
     }
   }, 7000);
 });
 
 function collectElements() {
   return {
-    detectButton: document.getElementById("detectButton"),
     summaryBadge: document.getElementById("summaryBadge"),
     summaryText: document.getElementById("summaryText"),
     promptInput: document.getElementById("promptInput"),
     validationMessage: document.getElementById("validationMessage"),
-    sendAllButton: document.getElementById("sendAllButton"),
-    sendButtons: document.querySelectorAll(".send-button"),
+    toggleButtons: Object.fromEntries(
+      SITE_ORDER.map((site) => [site, document.querySelector(`.toggle-button[data-target="${site}"]`)])
+    ),
     cards: Object.fromEntries(
       SITE_ORDER.map((site) => [site, document.getElementById(`card-${site}`)])
     ),
@@ -65,21 +64,23 @@ function collectElements() {
     ),
     metas: Object.fromEntries(
       SITE_ORDER.map((site) => [site, document.getElementById(`meta-${site}`)])
-    ),
-    openLinks: Object.fromEntries(
-      SITE_ORDER.map((site) => [site, document.getElementById(`open-${site}`)])
     )
   };
 }
 
-async function detectTargets(elements, userInitiated) {
+async function detectTargets(elements) {
   if (state.busy) {
     return;
   }
 
-  setBusy(elements, true, userInitiated ? "Checking" : "Syncing", "neutral");
+  setSummary(
+    elements,
+    "Syncing",
+    "neutral",
+    "Checking provider tabs in this window first."
+  );
+
   const response = await sendRuntimeMessage({ type: "DETECT_TARGETS" });
-  setBusy(elements, false);
 
   if (!response || response.error) {
     setSummary(
@@ -88,6 +89,7 @@ async function detectTargets(elements, userInitiated) {
       "error",
       response && response.error ? response.error : "Could not inspect current tabs."
     );
+
     for (const site of SITE_ORDER) {
       setSiteState(elements, site, {
         tone: "error",
@@ -102,8 +104,20 @@ async function detectTargets(elements, userInitiated) {
   renderDetection(elements, response);
 }
 
-async function sendToTargets(elements, targets) {
+async function sendToSelectedTargets(elements) {
   if (state.busy) {
+    return;
+  }
+
+  const targets = getSelectedTargets();
+  if (targets.length === 0) {
+    showValidation(elements.validationMessage, "Turn on at least one target button.");
+    setSummary(
+      elements,
+      "No targets",
+      "warn",
+      "All target buttons are off. Turn one on, then press Enter."
+    );
     return;
   }
 
@@ -115,7 +129,7 @@ async function sendToTargets(elements, targets) {
   }
 
   hideValidation(elements.validationMessage);
-  setBusy(elements, true, targets.length === SITE_ORDER.length ? "Broadcasting" : "Sending", "neutral");
+  setBusy(elements, true);
 
   for (const site of targets) {
     setSiteState(elements, site, {
@@ -124,6 +138,13 @@ async function sendToTargets(elements, targets) {
       meta: `Sending prompt to ${SITE_LABELS[site]}...`
     });
   }
+
+  setSummary(
+    elements,
+    targets.length === SITE_ORDER.length ? "Sending all" : "Sending",
+    "neutral",
+    `Sending to ${describeTargets(targets)}.`
+  );
 
   const response = await sendRuntimeMessage({
     type: "SEND_TO_TARGETS",
@@ -140,6 +161,7 @@ async function sendToTargets(elements, targets) {
       "error",
       response && response.error ? response.error : "The extension did not return a result."
     );
+
     for (const site of targets) {
       setSiteState(elements, site, {
         tone: "error",
@@ -168,7 +190,7 @@ function renderIdle(elements) {
     elements,
     "Idle",
     "neutral",
-    "Arrange this dashboard below your provider tabs in a tiled browser layout."
+    "All three targets start on. Press Enter to send, or Shift+Enter for a new line."
   );
 
   for (const site of SITE_ORDER) {
@@ -186,11 +208,11 @@ function renderDetection(elements, detection) {
 
   for (const site of SITE_ORDER) {
     const info = detection[site];
-    const tone = detectionTone(info);
-    const badge = detectionBadge(info);
-    const meta = detectionMeta(info);
-
-    setSiteState(elements, site, { tone, badge, meta });
+    setSiteState(elements, site, {
+      tone: detectionTone(info),
+      badge: detectionBadge(info),
+      meta: detectionMeta(info)
+    });
 
     if (info && info.found) {
       foundCount += 1;
@@ -199,23 +221,24 @@ function renderDetection(elements, detection) {
     if (info && info.found && info.sameWindow) {
       readySameWindow += 1;
     }
-
-    if (info && info.launchUrl) {
-      elements.openLinks[site].href = info.launchUrl;
-    }
   }
 
-  if (readySameWindow === 3) {
-    setSummary(elements, "Ready", "success", "All three provider tabs are available in this window.");
+  if (readySameWindow === SITE_ORDER.length) {
+    setSummary(
+      elements,
+      "Ready",
+      "success",
+      `All three provider tabs are available in this window. Enter sends to ${describeTargets(getSelectedTargets())}.`
+    );
     return;
   }
 
-  if (foundCount === 3) {
+  if (foundCount === SITE_ORDER.length) {
     setSummary(
       elements,
       "Detected",
       "warn",
-      "All providers were found, but at least one is in another window."
+      `All providers were found, but at least one is in another window. Enter sends to ${describeTargets(getSelectedTargets())}.`
     );
     return;
   }
@@ -223,11 +246,9 @@ function renderDetection(elements, detection) {
   const missingSites = SITE_ORDER.filter((site) => !(detection[site] && detection[site].found));
   setSummary(
     elements,
-    missingSites.length ? "Missing" : "Detected",
-    missingSites.length ? "error" : "warn",
-    missingSites.length
-      ? `Missing provider tabs: ${missingSites.map((site) => SITE_LABELS[site]).join(", ")}.`
-      : "Provider tabs detected."
+    "Missing",
+    "error",
+    `Missing provider tabs: ${missingSites.map((site) => SITE_LABELS[site]).join(", ")}.`
   );
 }
 
@@ -259,11 +280,9 @@ function renderSendResults(elements, targets, response) {
   if (successCount === targets.length) {
     setSummary(
       elements,
-      targets.length === 3 ? "Sent to all" : "Sent",
+      successCount === SITE_ORDER.length ? "Sent to all" : "Sent",
       "success",
-      targets.length === 3
-        ? "Prompt sent to ChatGPT, Claude, and Gemini."
-        : `Prompt sent to ${SITE_LABELS[targets[0]]}.`
+      `Prompt sent to ${describeTargets(targets)}.`
     );
     return;
   }
@@ -294,6 +313,45 @@ function normalizeResult(result, site) {
   };
 }
 
+function toggleTarget(elements, site) {
+  if (state.busy) {
+    return;
+  }
+
+  if (state.selectedTargets.has(site)) {
+    state.selectedTargets.delete(site);
+  } else {
+    state.selectedTargets.add(site);
+  }
+
+  renderTargetToggles(elements);
+
+  const targets = getSelectedTargets();
+  setSummary(
+    elements,
+    targets.length ? "Targets set" : "No targets",
+    targets.length ? "neutral" : "warn",
+    targets.length
+      ? `Enter will send to ${describeTargets(targets)}.`
+      : "All target buttons are off. Turn one on, then press Enter."
+  );
+}
+
+function renderTargetToggles(elements) {
+  for (const site of SITE_ORDER) {
+    const button = elements.toggleButtons[site];
+    const isActive = state.selectedTargets.has(site);
+    button.className = `button toggle-button ${isActive ? "is-active" : "is-inactive"}`;
+    button.setAttribute("aria-pressed", String(isActive));
+    button.textContent = SITE_LABELS[site];
+    button.title = `${SITE_LABELS[site]} ${isActive ? "on" : "off"}`;
+  }
+}
+
+function getSelectedTargets() {
+  return SITE_ORDER.filter((site) => state.selectedTargets.has(site));
+}
+
 function detectionTone(info) {
   if (!info || !info.found) {
     return "error";
@@ -320,7 +378,7 @@ function detectionBadge(info) {
 
 function detectionMeta(info) {
   if (!info || !info.found) {
-    return "No matching tab found. Use Open to create or log into the provider tab.";
+    return "No matching tab found. Open the provider chat in this window.";
   }
 
   const locationText = info.sameWindow ? "same window" : "other window";
@@ -334,16 +392,10 @@ function failureTone(status) {
   return warnStatuses.has(status) ? "warn" : "error";
 }
 
-function setBusy(elements, busy, badgeLabel, tone) {
+function setBusy(elements, busy) {
   state.busy = busy;
-  elements.detectButton.disabled = busy;
-  elements.sendAllButton.disabled = busy;
-  for (const button of elements.sendButtons) {
-    button.disabled = busy;
-  }
-
-  if (busy) {
-    setSummary(elements, badgeLabel, tone, "Waiting for target tabs to respond...");
+  for (const site of SITE_ORDER) {
+    elements.toggleButtons[site].disabled = busy;
   }
 }
 
@@ -368,6 +420,14 @@ function showValidation(element, message) {
 function hideValidation(element) {
   element.textContent = "";
   element.classList.add("hidden");
+}
+
+function describeTargets(targets) {
+  if (!targets.length) {
+    return "no targets";
+  }
+
+  return targets.map((site) => SITE_LABELS[site]).join(", ");
 }
 
 function humanizeStatus(status) {

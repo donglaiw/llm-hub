@@ -14,14 +14,12 @@
           <h1>LLM Hub Dashboard</h1>
           <p class="hero-copy">
             Keep ChatGPT, Claude, and Gemini open as real tabs above this page.
-            Use the shared composer here to send to one provider or all three.
+            Toggle the targets below. Press Enter in the composer to send to every
+            target that is currently on.
           </p>
         </div>
 
         <div class="hero-actions">
-          <button id="detectButton" class="button ghost" type="button">
-            Refresh status
-          </button>
           <div id="summaryBadge" class="summary-badge neutral">Idle</div>
         </div>
       </section>
@@ -36,20 +34,6 @@
             <span id="badge-chatgpt" class="target-badge neutral">unknown</span>
           </div>
           <p id="meta-chatgpt" class="target-meta">No tab detected yet.</p>
-          <div class="target-card-actions">
-            <button class="button subtle send-button" type="button" data-target="chatgpt">
-              Send to ChatGPT
-            </button>
-            <a
-              id="open-chatgpt"
-              class="link-button"
-              href="https://chatgpt.com/"
-              target="_blank"
-              rel="noreferrer"
-            >
-              Open
-            </a>
-          </div>
         </article>
 
         <article id="card-claude" class="target-card neutral">
@@ -61,20 +45,6 @@
             <span id="badge-claude" class="target-badge neutral">unknown</span>
           </div>
           <p id="meta-claude" class="target-meta">No tab detected yet.</p>
-          <div class="target-card-actions">
-            <button class="button subtle send-button" type="button" data-target="claude">
-              Send to Claude
-            </button>
-            <a
-              id="open-claude"
-              class="link-button"
-              href="https://claude.ai/"
-              target="_blank"
-              rel="noreferrer"
-            >
-              Open
-            </a>
-          </div>
         </article>
 
         <article id="card-gemini" class="target-card neutral">
@@ -86,20 +56,6 @@
             <span id="badge-gemini" class="target-badge neutral">unknown</span>
           </div>
           <p id="meta-gemini" class="target-meta">No tab detected yet.</p>
-          <div class="target-card-actions">
-            <button class="button subtle send-button" type="button" data-target="gemini">
-              Send to Gemini
-            </button>
-            <a
-              id="open-gemini"
-              class="link-button"
-              href="https://gemini.google.com/app"
-              target="_blank"
-              rel="noreferrer"
-            >
-              Open
-            </a>
-          </div>
         </article>
       </section>
 
@@ -107,10 +63,10 @@
         <div class="composer-header">
           <div>
             <p class="target-kicker">Shared composer</p>
-            <h2>Broadcast or route a prompt</h2>
+            <h2>Toggle targets, then press Enter</h2>
           </div>
           <p id="summaryText" class="summary-text">
-            Arrange this dashboard below your provider tabs in a tiled browser layout.
+            All three targets start on. Shift+Enter inserts a new line.
           </p>
         </div>
 
@@ -126,16 +82,31 @@
         <p id="validationMessage" class="validation hidden" role="alert"></p>
 
         <div class="composer-actions">
-          <button id="sendAllButton" class="button primary" type="button">
-            Send to all
-          </button>
-          <button id="sendChatgptButton" class="button secondary send-button" type="button" data-target="chatgpt">
+          <button
+            id="toggleChatgptButton"
+            class="button toggle-button is-active"
+            type="button"
+            data-target="chatgpt"
+            aria-pressed="true"
+          >
             ChatGPT
           </button>
-          <button id="sendClaudeButton" class="button secondary send-button" type="button" data-target="claude">
+          <button
+            id="toggleClaudeButton"
+            class="button toggle-button is-active"
+            type="button"
+            data-target="claude"
+            aria-pressed="true"
+          >
             Claude
           </button>
-          <button id="sendGeminiButton" class="button secondary send-button" type="button" data-target="gemini">
+          <button
+            id="toggleGeminiButton"
+            class="button toggle-button is-active"
+            type="button"
+            data-target="gemini"
+            aria-pressed="true"
+          >
             Gemini
           </button>
         </div>
