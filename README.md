@@ -54,3 +54,6 @@ The extension does not control tiling. Vivaldi handles the layout.
 - The extension prefers provider tabs in the same window as the dashboard.
 - If a provider shows `missing`, open that chat tab in the same window.
 - If a provider shows `composer not found` or `messaging failed`, refresh that provider tab and try again.
+
+## Acknowledgement
+- [GenAIPromptExtension](https://github.com/dliedke/GenAIPromptExtension)
