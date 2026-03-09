@@ -14,7 +14,7 @@ The extension opens a dashboard tab with a shared composer. It sends prompts int
 2. Enable `Developer Mode`.
 3. Click `Load Unpacked`.
 4. Select this folder:
-   `/Users/weidf/Code/misc/llm-hub`
+   `llm-hub`
 5. Pin the extension icon if needed.
 
 ## Open The Tabs
